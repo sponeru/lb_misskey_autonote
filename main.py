@@ -14,15 +14,14 @@ client = tweepy.Client(consumer_key=os.environ['TWETTER_CONSUMER_KEY'],
                        access_token=os.environ['TWETTER_ACCESS_TOKEN'],
                        access_token_secret=os.environ['TWITTER_ACCESS_SECRET'],
                        bearer_token=os.environ['TWITTER_BEARER_TOKEN'])
-
 f = open('datefile.txt', 'r+', encoding='UTF-8')  #時間記録用ファイルを読み込む
 
 #他のアカウントでやりたかったら次の2行を編集すればなんとかなる
-search_word_lastbullet_user = 'from:assaultlily_lb -\”app.adjust.com\”'  #キャンペーンツイートを除外 Twitterの検索と同じ構文です
+search_word_lastbullet_user = 'from:assaultlily_lb -\”app.adjust.com\”'  #キャンペーンツイートを除外 Twitterの検索と同じ構文です	
 urlbase_lb = "https://twitter.com/assaultlily_lb/status/"  #TwitterのURLのベース(後ろに勝手にIDがつく)
 
-
 item_number = 10  #最新10件のデータ収得
+
 
 #関数:　UTCをJSTに変換する (サイトからの引用)
 def change_time_JST(u_time):
@@ -40,7 +39,6 @@ def send_lb():  #ツイートの取得とノート
     max_results=item_number,
     tweet_fields=["created_at"])
 
-
   datelist = f.readlines()
   recenttime_lb = datetime.fromisoformat(datelist[0])
 
@@ -56,6 +54,7 @@ def send_lb():  #ツイートの取得とノート
         if a != "\n":  #
           tempstr[i] = "> " + a  #
       tempstr = "\n".join(tempstr)  #
+      tempstr = tempstr.replace("@", "＠")
       print(tempstr)  #
       mk.notes_create(
         text=str("Twitterが更新されました！\n") +
@@ -91,6 +90,7 @@ schedule.every().day.at("18:27").do(bonus_alart_b)
 schedule.every().day.at("23:12").do(bonus_alart_c)
 
 #ここから常時実行
+send_lb()
 keep_alive()
 while True:
   schedule.run_pending()
