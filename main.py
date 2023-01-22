@@ -14,11 +14,15 @@ client = tweepy.Client(consumer_key=os.environ['TWETTER_CONSUMER_KEY'],
                        access_token=os.environ['TWETTER_ACCESS_TOKEN'],
                        access_token_secret=os.environ['TWITTER_ACCESS_SECRET'],
                        bearer_token=os.environ['TWITTER_BEARER_TOKEN'])
+
 f = open('datefile.txt', 'r+', encoding='UTF-8')  #時間記録用ファイルを読み込む
 
-search_word_lastbullet_user = 'from:assaultlily_lb -\”app.adjust.com\”'  #キャンペーンツイートを除外
-item_number = 10  #最新10件のデータ収得
+#他のアカウントでやりたかったら次の2行を編集すればなんとかなる
+search_word_lastbullet_user = 'from:assaultlily_lb -\”app.adjust.com\”'  #キャンペーンツイートを除外 Twitterの検索と同じ構文です
+urlbase_lb = "https://twitter.com/assaultlily_lb/status/"  #TwitterのURLのベース(後ろに勝手にIDがつく)
 
+
+item_number = 10  #最新10件のデータ収得
 
 #関数:　UTCをJSTに変換する (サイトからの引用)
 def change_time_JST(u_time):
@@ -30,13 +34,13 @@ def change_time_JST(u_time):
   return jst_time
 
 
-def send_lb():  #ラスバレ公式ツイートの取得とノート
+def send_lb():  #ツイートの取得とノート
   lastbullet_tweets = client.search_recent_tweets(
     query=search_word_lastbullet_user,
     max_results=item_number,
     tweet_fields=["created_at"])
 
-  urlbase_lb = "https://twitter.com/assaultlily_lb/status/"  #TwitterのURLのベース(後ろに勝手にIDがつく)
+
   datelist = f.readlines()
   recenttime_lb = datetime.fromisoformat(datelist[0])
 
@@ -65,7 +69,7 @@ def send_lb():  #ラスバレ公式ツイートの取得とノート
   f.write(writedata)
 
 
-#ここからマルチバトルの通知処理
+#ここからマルチバトルの通知処理 要らなければここから10行消しても良い
 def bonus_alart_a():
   mk.notes_create(text="[定期通知]\n[3分前]マルチバトルのボーナスタイムがもうすぐ始まります！" + "(12時の部)")
 
@@ -80,6 +84,8 @@ def bonus_alart_c():
 
 #スケジュールに登録
 schedule.every().hour.at(":05").do(send_lb)
+
+#マルチバトルの通知処理を消したら以下の3行も消しておく
 schedule.every().day.at("12:42").do(bonus_alart_a)
 schedule.every().day.at("18:27").do(bonus_alart_b)
 schedule.every().day.at("23:12").do(bonus_alart_c)
