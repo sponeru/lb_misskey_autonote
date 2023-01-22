@@ -1,0 +1,88 @@
+import pandas as pd
+import tweepy
+from datetime import datetime,timezone
+import pytz
+from misskey import Misskey
+import schedule
+from time import sleep
+
+
+mk = Misskey("", i="") #見せられないよ！(最初にMisskeyのインスタンスのアドレス、次にキーを入れておく)
+
+#ここからTweepyのキー
+client = tweepy.Client(
+    consumer_key="",  #見せられないよ！
+    consumer_secret="", #見せられないよ！
+    access_token="", #見せられないよ！
+    access_token_secret="", #見せられないよ！
+    bearer_token="" #見せられないよ！
+)
+
+f = open('datefile.txt', 'r+', encoding='UTF-8')  #時間記録用ファイルを読み込む
+
+
+search_word_lastbullet_user = 'from:assaultlily_lb -\”app.adjust.com\”' #キャンペーンツイートを除外
+item_number = 10 #最新10件のデータ収得
+
+
+
+
+#関数:　UTCをJSTに変換する (サイトからの引用)
+def change_time_JST(u_time):
+    #イギリスのtimezoneを設定するために再定義する
+    utc_time = datetime(u_time.year, u_time.month,u_time.day, \
+    u_time.hour,u_time.minute,u_time.second, tzinfo=timezone.utc)
+    #タイムゾーンを日本時刻に変換
+    jst_time = utc_time.astimezone(pytz.timezone("Asia/Tokyo"))
+    return jst_time
+
+def send_lb(): #ラスバレ公式ツイートの取得とノート
+    lastbullet_tweets = client.search_recent_tweets(
+        query=search_word_lastbullet_user,
+        max_results=item_number,
+        tweet_fields = ["created_at"]
+        )
+
+    urlbase_lb = "https://twitter.com/assaultlily_lb/status/" #TwitterのURLのベース(後ろに勝手にIDがつく)
+    datelist = f.readlines()
+    recenttime_lb = datetime.fromisoformat(datelist[0])
+
+    lastbullet_tweets = list(lastbullet_tweets[0])
+    for tweet in lastbullet_tweets:
+        if change_time_JST(tweet.created_at) > recenttime_lb:  #元ツイの投稿時間が最後に更新した時間より後であればノートを作成する処理に入る
+            tempstr = tweet.text                    #
+            tempstr = tempstr.split("\n")           #
+            print(tempstr)                          #
+            for i,a in enumerate(tempstr):          #       元ツイート文の先頭に引用符を付けるだけのクソみたいな処理
+                if a != "\n":                       #
+                    tempstr[i] = "> " + a           #
+            tempstr = "\n".join(tempstr)            #
+            print(tempstr)                          #
+            mk.notes_create(text=str("Twitterが更新されました！\n") + str("?[URL](" +urlbase_lb + str(tweet.id) +")\n"+ tempstr))  #ノートを作成
+
+    #ここから最後に更新した時間を記録する処理
+    f.seek(0)
+    f.truncate(0)
+    tempdatas = [change_time_JST(datetime.now(timezone.utc)).isoformat()]
+    writedata = "\n".join(tempdatas)
+    f.write(writedata)
+
+#ここからマルチバトルの通知処理
+def bonus_alart_a():
+    mk.notes_create(text="[定期通知]\n[3分前]マルチバトルのボーナスタイムがもうすぐ始まります！" + "(12時の部)")
+def bonus_alart_b():
+    mk.notes_create(text="[定期通知]\n[3分前]マルチバトルのボーナスタイムがもうすぐ始まります！" + "(18時の部)")
+def bonus_alart_c():
+    mk.notes_create(text="[定期通知]\n[3分前]マルチバトルのボーナスタイムがもうすぐ始まります！" + "(23時の部)")
+
+
+#スケジュールに登録
+schedule.every().hour.at(":05").do(send_lb)
+schedule.every().day.at("12:42").do(bonus_alart_a)
+schedule.every().day.at("18:27").do(bonus_alart_b)
+schedule.every().day.at("23:12").do(bonus_alart_c)
+
+#ここから常時実行
+while True:
+    schedule.run_pending()
+    sleep(1)
