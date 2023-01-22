@@ -1,0 +1,4 @@
+# lb_misskey_autonote
+ラスバレ公式のツイートを自動でMisskeyのノートにするBot
+
+改造すれば他のアカウントも対応できます
