@@ -6,6 +6,7 @@ from misskey import Misskey
 import schedule
 from time import sleep
 import os
+from server import keep_alive
 
 mk = Misskey(os.environ['MISSKEY_URL'], i=os.environ['MISSKEY_TOKEN'])
 client = tweepy.Client(consumer_key=os.environ['TWETTER_CONSUMER_KEY'],
@@ -89,6 +90,7 @@ schedule.every().day.at("18:27").do(bonus_alart_b)
 schedule.every().day.at("23:12").do(bonus_alart_c)
 
 #ここから常時実行
+keep_alive()
 send_lb()
 while True:
   schedule.run_pending()
